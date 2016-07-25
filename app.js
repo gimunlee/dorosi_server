@@ -3,7 +3,7 @@ var app=express();
 var body_parser=require("body-parser");
 var mongoose=require("mongoose");
 
-mongoose.connect("mongodb://localhost/dorosi");
+mongoose.connect("mongodb://143.248.48.232/dorosi");
 
 var db = mongoose.connection;
 
