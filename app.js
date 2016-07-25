@@ -20,15 +20,17 @@ db.once('open',function() {
 
 app.get("/",function(req, res) {
     console.log("Hello");
-    res.send("hello");
+    res.sendfile('./socketclient.html');
 });
+
+var port = 10240;
+var server = app.listen(10240,function() {
+    console.log("Listening " + port);
+});
+var io = require("socket.io")(server);
 
 var board=require("./board.js");
 var room=require("./room.js");
 board(app,mongoose);
-room(app,mongoose,board);
-
-var port = 10240;
-app.listen(10240,function() {
-    console.log("Listening " + port);
-})
+room(app,mongoose,io,board);
+// server.listen(10241);
