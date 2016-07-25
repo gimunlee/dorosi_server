@@ -24,7 +24,9 @@ app.get("/",function(req, res) {
 });
 
 var board=require("./board.js");
+var room=require("./room.js");
 board(app,mongoose);
+room(app,mongoose,board);
 
 var port = 10240;
 app.listen(10240,function() {

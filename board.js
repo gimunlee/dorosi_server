@@ -1,28 +1,17 @@
 var pathPrefix = "/board";
 var moment = require("moment");
 
+var boardSchema;
+var Board;
 module.exports = function (app, mongoose) {
-    var boardSchema = mongoose.Schema({
+    boardSchema = mongoose.Schema({
         tag: String,
         size: Number,
         words: [String],
         answers: [String]
     });
-    var Board = mongoose.model('boards', boardSchema);
-
-    var roomSchema = mongoose.Schema({
-        tag: String,
-        size: Number,
-        tiles: [Number],
-        dorosis: [{
-            dorosiid: String,
-            team: Number,
-            flagposition: Number,
-            dorosiposition: [Number],
-            direction: String
-        }]
-    });
-    var Room = mongoose.model('rooms', roomSchema);
+    Board = mongoose.model('boards', boardSchema);
+    module.exports.Board=Board;
 
     app.get(pathPrefix + "/testupload", function (req, res) {
         console.log("Request for test board uploading");
@@ -43,29 +32,5 @@ module.exports = function (app, mongoose) {
         });
         testBoard.save();
         res.send("test board uploaded");
-    });
-
-    app.get(pathPrefix + "/createtestroom", function (req, res) {
-        console.log("Request for creating test room");
-        var testBoard = Board.findOne({ "tag": 'testBoard' }, function (err, board) {
-            var initialTiles = [];
-            for (var i = 0; i < board.size * board.size; i++) {
-                initialTiles.push(0);
-            }
-            initialTiles[8] = 1;
-            initialTiles[27] = 2;
-            initialTiles[28] = 2;
-            initialTiles[29] = 2;
-
-            var testRoom = new Room({
-                tag:'testRoom',
-                size: board.size,
-                tiles: initialTiles,
-                dorosis: []
-            });
-            testRoom.save();
-            console.log("room created");
-            res.send("room created");
-        });
     });
 }
