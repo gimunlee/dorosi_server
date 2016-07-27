@@ -49,14 +49,14 @@ module.exports = function (app, mongoose, io, board) {
         });
     });
 
-    // 143.248.48.232:10240/room/create/?boardtag=testBoard&roomtag=testRoom
+    // 143.248.48.232:10240/room/create/?boardtag=cities&roomtag=gimunRoom
     app.get(pathPrefix + "/create", (req, res) => {
         console.log("creating new room");
         var board = Board.findOne({ "tag": req.query.boardtag }, (err, board) => {
             if (board) {
                 var initialTiles = [];
                 for (var i = 0; i < board.size * board.size; i++)
-                    initialTiles.push(0);
+                    initialTiles.push(i);
                 var room = new Room({
                     tag: req.query.roomtag,
                     boardtag: req.query.boardtag,
@@ -137,7 +137,7 @@ module.exports = function (app, mongoose, io, board) {
                     var currentPos = movingDorosi.dorosiposition;
                     var newPos = currentPos + delta[0] + delta[1] * room.size;
                     console.log("-> current position : " + movingDorosi.dorosiposition);
-                    if (isValidMove(currentPos, delta, room.size) && allDorosiPositions(room.dorosis).indexOf(newPos)==-1) {
+                    if (isValidMove(currentPos, delta, room.size) && allDorosiPositions(room.dorosis).indexOf(newPos) == -1) {
                         movingDorosi.dorosiposition = newPos;
                         movingDorosi.direction = req.query.direction;
                         logAndRes(res, "dorosi " + movingDorosi.dorosiid + " starts to move to " + movingDorosi.dorosiposition + ".");
@@ -156,55 +156,140 @@ module.exports = function (app, mongoose, io, board) {
     // 143.248.48.232:10240/room/flag/?roomtag=gimunRoom&dorosiid=gimunDo5
     app.get(pathPrefix + "/flag", (req, res) => {
         console.log("Request for flag dorosi " + req.query.dorosiid);
-        Room.findOne({ "tag": req.query.roomtag}, (err, room) => {
-            if(room) {
+        Room.findOne({ "tag": req.query.roomtag }, (err, room) => {
+            if (room) {
                 var flagDorosi = null;
                 _.each(room.dorosis, (dorosi, index) => {
-                    if(dorosi.dorosiid == req.query.dorosiid)
-                        flagDorosi=dorosi;
+                    if (dorosi.dorosiid == req.query.dorosiid)
+                        flagDorosi = dorosi;
                 });
-                if(flagDorosi !=null) {
+                if (flagDorosi != null) {
                     var currentPos = flagDorosi.dorosiposition;
-                    flagDorosi.flagposition=currentPos;
+                    flagDorosi.flagposition = currentPos;
                     room.save();
-                    logAndRes(res,"Flag on " + flagDorosi.flagposition);
+                    logAndRes(res, "Flag on " + flagDorosi.flagposition);
                 }
                 else
-                    logAndRes(res,"Cannot find dorosi " + req.query.dorosiid);
+                    logAndRes(res, "Cannot find dorosi " + req.query.dorosiid);
             }
             else
                 logAndRes(res, "No room of tag " + req.query.roomtag);
         });
     })
 
+    // var usersockets=[];
+    // var userroomtags=[];
+    // var userids=[];
+    var user = {};
+    var idsFromSocket = {};
     io.on("connection", (socket) => {
         console.log("connected");
-        // var tweet = { user: "nodesource", text: "Hello," };
-        // var interval = setInterval(() => {
-        //     io.sockets.emit("tweet", tweet);
-        // }, 1000);
 
-        socket.on("join", (req) => {
-            console.log("Joining of roomtag " + req.roomtag);
-            console.log("-> dorosiid = " + dorosiid);
-            console.log("-> team : " + team);
+        var soid = socket.id;
+        console.log("soid = " + soid);
+        var tweet = { user: "nodesource", text: "Hello," };
+        var interval = setInterval(() => {
+            // console.log("tweet");
+            socket.emit("tweet", tweet);
+        }, 20);
 
-            var room = Room.findOne({ "tag": req.roomtag }, (err, room) => {
+        console.log("-> socketid : " + socket.id);
+
+        socket.on("join", (reqString) => {
+            console.log("on join event : " + reqString);
+            var req = JSON.parse(reqString);
+
+            user[req.dorosiid] = { "roomtag": req.roomtag, "dorosiid": req.dorosiid, "team": req.team, "socket": socket.id, "updated": false };
+            idsFromSocket[socket.id] = req.dorosiid;
+            console.log("-> socketid : " + socket.id);
+
+            Room.findOne({ "tag": req.roomtag }, (err, room) => {
                 if (room) {
                     //find a blank for this dorosi
-                    var board = Board.findOne({ "tag": room.boardtag }, (err, room) => {
-                    });
+
+                    //send first room info.
+                    console.log("-> socketid : " + socket.id);
+                    console.log("-> first update board");
+
+
+                    console.log("soid : " + soid);
+                    console.log("user.socket : " + user[req.dorosiid].socket);
+                    // io.to(soid).emit("updateboard", room);
+                    console.log("emit");
+                    io.to(user[req.dorosiid].socket).emit("updateboard",room);
+                    //io.to(user[req.dorosiid].socket).emit("updateboard", room);
                 }
                 else {
-                    console.log("No room of tag " + roomtag);
+                    console.log("== No room of tag " + req.roomtag);
                     res.writeHead(404);
                     res.end();
                 }
+            });
+        });
+        socket.on("update success", (reqString2) => {
+            // console.log("on update success : " + reqString2);
+            var req2 = JSON.parse(reqString2);
+            user[req2.dorosiid].updated = true;
+            // console.log("-> from " + req2.dorosiid);
+            // console.log("-> user info : " + user[req2.dorosiid]);
+            // console.log("-> users : " + JSON.stringify(user));
+            Room.findOne({ "tag": req2.roomtag }, (err, room2) => {
+                // console.log("emit");
+                io.to(user[req2.dorosiid].socket).emit("updateboard", room2);
+            })
+            // socket.emit("updateboard",room)
+        });
+        socket.on("update failed", (reqString3) => {
+            console.log("on update failed : " + reqString3);
+            var req3 = JSON.parse(reqString3);
+            user[req3.dorosiid].updated = true;
+            console.log("-> from " + req3.dorosiid);
+            // console.log("-> user info : " + user[req3.dorosiid]);
+            console.log("-> users : " + JSON.stringify(user));
+
+            console.log("-> error : " + req3.error);
+
+            Room.findOne({ "tag": req3.roomtag }, (err, room3) => {
+                // console.log("emit");
+                io.to(user[req3.dorosiid].socket).emit("updateboard", room3);
+            })
+        });
+
+        socket.on("move", (reqString4) => {
+            console.log("on move : " + reqString4);
+            var req4 = JSON.parse(reqString4);
+            Room.findOne({ "tag": req4.roomtag}, (err, room4) => {
+                var delta=[0,0];
+                switch(req4.direction) {
+                    case "left": delta[0] = -1; break;
+                    case "right": delta[0] = 1; break;
+                    case "down" : delta[1] = -1; break;
+                    case "up" : delta[1] = 1; break;
+                }
+                var movingDorosi = null;
+                _.each(room4.dorosis, (dorosi, index) => {
+                    if(dorosi.dorosiid == req4.dorosiid)
+                        movingDorosi=dorosi;
+                });
+                if(movingDorosi!=null) {
+                    var currentPos = movingDorosi.dorosiposition;
+                    var newPos = currentPos + delta[0] + delta[1] * room4.size;
+                    console.log("-> current Position : " + movingDorosi.dorosiposition);
+                    if(isValidMove(currentPos, delta, room4.size) && allDorosiPositions(room4.dorosis).indexOf(newPos) == -1) {
+                        movingDorosi.dorosiposition=newPos;
+                        movingDorosi.direction=req4.direction;
+                        console.log("-> dorosi " + movingDorosi.dorosiid + " starts to move to " + movingDorosi.dorosiposition);
+                        room4.save();
+                    }
+                }
+                else
+                    console.log("-> " + req.dorosiid + " is not found.");
             })
         })
 
         socket.on("disconnect", () => {
-            clearInterval(interval);
+            // clearInterval(updateBoardInterval);
+            delete user[idsFromSocket[socket.id]];
             console.log("disconnected");
         });
     });

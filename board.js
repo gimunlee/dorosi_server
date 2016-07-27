@@ -110,12 +110,12 @@ module.exports = function (app, mongoose) {
         for(var i=0;i<answer.length;i++) {
             console.log(answer[i]);
         }
-        new Board({
-            tag: 'cities',
-            size: length,
-            words: word_board,
-            answers: answer
-        }).save();
+        // new Board({
+        //     tag: 'cities',
+        //     size: length,
+        //     words: word_board,
+        //     answers: answer
+        // }).save();
     });
 
 
