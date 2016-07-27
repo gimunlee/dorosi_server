@@ -56,7 +56,7 @@ module.exports = function (app, mongoose, io, board) {
             if (board) {
                 var initialTiles = [];
                 for (var i = 0; i < board.size * board.size; i++)
-                    initialTiles.push(i);
+                    initialTiles.push(0);
                 var room = new Room({
                     tag: req.query.roomtag,
                     boardtag: req.query.boardtag,
@@ -116,66 +116,66 @@ module.exports = function (app, mongoose, io, board) {
     });
 
     // 143.248.48.232:10240/room/move/?direction=up&roomtag=gimunRoom&dorosiid=gimunDo5
-    app.get(pathPrefix + "/move", (req, res) => {
-        console.log("Request for moving dorosi " + req.query.dorosiid);
-        var delta = [0, 0];
-        switch (req.query.direction) {
-            case "left": delta[0] = -1; break;
-            case "right": delta[0] = 1; break;
-            case "down": delta[1] = -1; break;
-            case "up": delta[1] = 1; break;
-        }
-        Room.findOne({ "tag": req.query.roomtag }, (err, room) => {
-            if (room) {
-                var movingDorosi = null;
-                _.each(room.dorosis, (dorosi, index) => {
-                    if (dorosi.dorosiid == req.query.dorosiid)
-                        movingDorosi = dorosi;
-                })
-                if (movingDorosi != null) {
-                    //Check whether the move is valid.
-                    var currentPos = movingDorosi.dorosiposition;
-                    var newPos = currentPos + delta[0] + delta[1] * room.size;
-                    console.log("-> current position : " + movingDorosi.dorosiposition);
-                    if (isValidMove(currentPos, delta, room.size) && allDorosiPositions(room.dorosis).indexOf(newPos) == -1) {
-                        movingDorosi.dorosiposition = newPos;
-                        movingDorosi.direction = req.query.direction;
-                        logAndRes(res, "dorosi " + movingDorosi.dorosiid + " starts to move to " + movingDorosi.dorosiposition + ".");
-                        room.save();
-                    }
-                    else
-                        logAndRes(res, "move from " + currentPos + " to " + req.query.direction + " is invalid");
-                }
-                else
-                    logAndRes(res, "Cannot find dorosi " + req.query.dorosiid);
-            }
-            else
-                logAndRes(res, "No room of tag " + req.query.roomtag);
-        });
-    });
+    // app.get(pathPrefix + "/move", (req, res) => {
+    //     console.log("Request for moving dorosi " + req.query.dorosiid);
+    //     var delta = [0, 0];
+    //     switch (req.query.direction) {
+    //         case "left": delta[0] = -1; break;
+    //         case "right": delta[0] = 1; break;
+    //         case "down": delta[1] = -1; break;
+    //         case "up": delta[1] = 1; break;
+    //     }
+    //     Room.findOne({ "tag": req.query.roomtag }, (err, room) => {
+    //         if (room) {
+    //             var movingDorosi = null;
+    //             _.each(room.dorosis, (dorosi, index) => {
+    //                 if (dorosi.dorosiid == req.query.dorosiid)
+    //                     movingDorosi = dorosi;
+    //             })
+    //             if (movingDorosi != null) {
+    //                 //Check whether the move is valid.
+    //                 var currentPos = movingDorosi.dorosiposition;
+    //                 var newPos = currentPos + delta[0] + delta[1] * room.size;
+    //                 console.log("-> current position : " + movingDorosi.dorosiposition);
+    //                 if (isValidMove(currentPos, delta, room.size) && allDorosiPositions(room.dorosis).indexOf(newPos) == -1) {
+    //                     movingDorosi.dorosiposition = newPos;
+    //                     movingDorosi.direction = req.query.direction;
+    //                     logAndRes(res, "dorosi " + movingDorosi.dorosiid + " starts to move to " + movingDorosi.dorosiposition + ".");
+    //                     room.save();
+    //                 }
+    //                 else
+    //                     logAndRes(res, "move from " + currentPos + " to " + req.query.direction + " is invalid");
+    //             }
+    //             else
+    //                 logAndRes(res, "Cannot find dorosi " + req.query.dorosiid);
+    //         }
+    //         else
+    //             logAndRes(res, "No room of tag " + req.query.roomtag);
+    //     });
+    // });
     // 143.248.48.232:10240/room/flag/?roomtag=gimunRoom&dorosiid=gimunDo5
-    app.get(pathPrefix + "/flag", (req, res) => {
-        console.log("Request for flag dorosi " + req.query.dorosiid);
-        Room.findOne({ "tag": req.query.roomtag }, (err, room) => {
-            if (room) {
-                var flagDorosi = null;
-                _.each(room.dorosis, (dorosi, index) => {
-                    if (dorosi.dorosiid == req.query.dorosiid)
-                        flagDorosi = dorosi;
-                });
-                if (flagDorosi != null) {
-                    var currentPos = flagDorosi.dorosiposition;
-                    flagDorosi.flagposition = currentPos;
-                    room.save();
-                    logAndRes(res, "Flag on " + flagDorosi.flagposition);
-                }
-                else
-                    logAndRes(res, "Cannot find dorosi " + req.query.dorosiid);
-            }
-            else
-                logAndRes(res, "No room of tag " + req.query.roomtag);
-        });
-    })
+    // app.get(pathPrefix + "/flag", (req, res) => {
+    //     console.log("Request for flag dorosi " + req.query.dorosiid);
+    //     Room.findOne({ "tag": req.query.roomtag }, (err, room) => {
+    //         if (room) {
+    //             var flagDorosi = null;
+    //             _.each(room.dorosis, (dorosi, index) => {
+    //                 if (dorosi.dorosiid == req.query.dorosiid)
+    //                     flagDorosi = dorosi;
+    //             });
+    //             if (flagDorosi != null) {
+    //                 var currentPos = flagDorosi.dorosiposition;
+    //                 flagDorosi.flagposition = currentPos;
+    //                 room.save();
+    //                 logAndRes(res, "Flag on " + flagDorosi.flagposition);
+    //             }
+    //             else
+    //                 logAndRes(res, "Cannot find dorosi " + req.query.dorosiid);
+    //         }
+    //         else
+    //             logAndRes(res, "No room of tag " + req.query.roomtag);
+    //     });
+    // })
 
     // var usersockets=[];
     // var userroomtags=[];
@@ -191,41 +191,64 @@ module.exports = function (app, mongoose, io, board) {
         var interval = setInterval(() => {
             // console.log("tweet");
             socket.emit("tweet", tweet);
-        }, 20);
+        }, 60);
 
         console.log("-> socketid : " + socket.id);
 
         socket.on("join", (reqString) => {
             console.log("on join event : " + reqString);
             var req = JSON.parse(reqString);
+            var dorosiid = req.dorosiid;
 
-            user[req.dorosiid] = { "roomtag": req.roomtag, "dorosiid": req.dorosiid, "team": req.team, "socket": socket.id, "updated": false };
-            idsFromSocket[socket.id] = req.dorosiid;
-            console.log("-> socketid : " + socket.id);
-
-            Room.findOne({ "tag": req.roomtag }, (err, room) => {
-                if (room) {
-                    //find a blank for this dorosi
-
-                    //send first room info.
+            Room.findOne({"tag":req.roomtag},(err,room) => {
+                if(room) {
+                    var joiningDorosi = null;
+                    _.each(room.dorosis,(dorosi,index) => {
+                        if(dorosi.dorosiid==dorosiid)
+                            joiningDorosi=dorosi;
+                    });
+                    if(joiningDorosi==null) {
+                        var existingDorosiPositions=allDorosiPositions(room.dorosis);
+                        var newPos=0;
+                        while(existingDorosiPositions.indexOf(newPos)>-1)
+                            newPos++;
+                        var newDorosi = {
+                            dorosiid: dorosiid,
+                            team: (dorosiid.charCodeAt(0))%3+1,
+                            flagposition: -1,
+                            dorosiposition: newPos,
+                            direction: "right"
+                        };
+                        room.dorosis.push(newDorosi);
+                        joiningDorosi=newDorosi;
+                        room.save();
+                    }
+                    user[dorosiid]={"roomtag":req.roomtag,"dorosiid":dorosiid,"team":joiningDorosi.team,"socket":socket.id,"updated":false};
+                    idsFromSocket[socket.id] = dorosiid;
                     console.log("-> socketid : " + socket.id);
-                    console.log("-> first update board");
 
-
-                    console.log("soid : " + soid);
-                    console.log("user.socket : " + user[req.dorosiid].socket);
-                    // io.to(soid).emit("updateboard", room);
-                    console.log("emit");
-                    io.to(user[req.dorosiid].socket).emit("updateboard",room);
-                    //io.to(user[req.dorosiid].socket).emit("updateboard", room);
+                    console.log("emit board data");
+                    Board.findOne({"tag":room.boardtag},(err, board) => {
+                        if(board)
+                            io.to(user[dorosiid].socket).emit("load",board);
+                        else
+                            console.log("== No board of tag " + room.boardtag);
+                    });
                 }
-                else {
+                else
                     console.log("== No room of tag " + req.roomtag);
-                    res.writeHead(404);
-                    res.end();
-                }
             });
         });
+        socket.on("load completed", (reqString) => {
+            console.log("on load completed :");
+            var req = JSON.parse(reqString);
+            //send first room info.
+            Room.findOne({ "tag": user[req.dorosiid].roomtag }, (err, room) => {
+                console.log("emit first updateboard");
+                console.log(JSON.stringify(room));
+                io.to(user[req.dorosiid].socket).emit("updateboard", room);
+            });
+        })
         socket.on("update success", (reqString2) => {
             // console.log("on update success : " + reqString2);
             var req2 = JSON.parse(reqString2);
@@ -258,37 +281,134 @@ module.exports = function (app, mongoose, io, board) {
         socket.on("move", (reqString4) => {
             console.log("on move : " + reqString4);
             var req4 = JSON.parse(reqString4);
-            Room.findOne({ "tag": req4.roomtag}, (err, room4) => {
-                var delta=[0,0];
-                switch(req4.direction) {
-                    case "left": delta[0] = -1; break;
-                    case "right": delta[0] = 1; break;
-                    case "down" : delta[1] = -1; break;
-                    case "up" : delta[1] = 1; break;
-                }
-                var movingDorosi = null;
-                _.each(room4.dorosis, (dorosi, index) => {
-                    if(dorosi.dorosiid == req4.dorosiid)
-                        movingDorosi=dorosi;
-                });
-                if(movingDorosi!=null) {
-                    var currentPos = movingDorosi.dorosiposition;
-                    var newPos = currentPos + delta[0] + delta[1] * room4.size;
-                    console.log("-> current Position : " + movingDorosi.dorosiposition);
-                    if(isValidMove(currentPos, delta, room4.size) && allDorosiPositions(room4.dorosis).indexOf(newPos) == -1) {
-                        movingDorosi.dorosiposition=newPos;
-                        movingDorosi.direction=req4.direction;
-                        console.log("-> dorosi " + movingDorosi.dorosiid + " starts to move to " + movingDorosi.dorosiposition);
-                        room4.save();
+            Room.findOne({ "tag": req4.roomtag }, (err, room4) => {
+                if (room4) {
+                    var delta = [0, 0];
+                    switch (req4.direction) {
+                        case "left": delta[0] = -1; break;
+                        case "right": delta[0] = 1; break;
+                        case "down": delta[1] = -1; break;
+                        case "up": delta[1] = 1; break;
                     }
+                    var movingDorosi = null;
+                    _.each(room4.dorosis, (dorosi, index) => {
+                        if (dorosi.dorosiid == req4.dorosiid)
+                            movingDorosi = dorosi;
+                    });
+                    if (movingDorosi != null) {
+                        var currentPos = movingDorosi.dorosiposition;
+                        var newPos = currentPos + delta[0] + delta[1] * room4.size;
+                        console.log("-> current Position : " + movingDorosi.dorosiposition);
+                        if (isValidMove(currentPos, delta, room4.size) && allDorosiPositions(room4.dorosis).indexOf(newPos) == -1) {
+                            movingDorosi.dorosiposition = newPos;
+                            movingDorosi.direction = req4.direction;
+                            console.log("-> dorosi " + movingDorosi.dorosiid + " starts to move to " + movingDorosi.dorosiposition);
+                            room4.save();
+                        }
+                    }
+                    else
+                        console.log("-> " + req4.dorosiid + " is not found.");
                 }
                 else
-                    console.log("-> " + req.dorosiid + " is not found.");
+                    console.log("-> room " + req4.roomtag + " is not found.");
             })
+        });
+        socket.on("flag", (reqString5) => {
+            console.log("on flag : " + reqString5);
+            var req5 = JSON.parse(reqString5);
+            Room.findOne({ "tag": req5.roomtag }, (err, room5) => {
+                if (room5) {
+                    Board.findOne({ "tag": room5.boardtag }, (err, board) => {
+                        if (board) {
+                            var flagDorosi = null;
+                            _.each(room5.dorosis, (dorosi, index) => {
+                                if (dorosi.dorosiid == req5.dorosiid)
+                                    flagDorosi = dorosi;
+                            });
+                            if (flagDorosi != null) {
+                                var currentPos = flagDorosi.dorosiposition;
+                                var flagPos = flagDorosi.flagposition;
+                                //Check answer
+
+                                var flagX = flagPos % board.size;
+                                var flagY = Math.floor(flagPos / board.size);
+                                var currentX = currentPos % board.size;
+                                var currentY = Math.floor(currentPos / board.size);
+
+                                function norm(t) {
+                                    if(t==0) return 0;
+                                    else  return t / Math.abs(t);
+                                }
+                                var deltaX = norm(currentX - flagX);
+                                var deltaY = norm(currentY - flagY);
+                                console.log("deltaX = " + deltaX + " deltaY = " + deltaY);
+
+                                if ((deltaX * deltaY == 0 || Math.abs(currentX - flagX) == Math.abs(currentY - flagY)) && flagPos != -1) {
+                                    var tempAnswer = "";
+                                    var tempPos = flagPos;
+                                    while (tempPos != currentPos) {
+                                        tempAnswer = tempAnswer + board.words[tempPos];
+                                        tempPos += deltaX + deltaY * board.size;
+                                    }
+                                    tempAnswer = tempAnswer +board.words[currentPos];
+                                    var answerIndex = board.answers.indexOf(tempAnswer);
+                                    if (answerIndex > -1) {
+                                        console.log("=================== ANSWER!!");
+                                        console.log("team : " + flagDorosi.team);
+                                        tempPos = flagPos;
+                                        while (tempPos != currentPos) {
+                                            // room5.tiles[tempPos] = flagDorosi.team;
+                                            console.log("====== tempPos : " + tempPos + "// team : " + flagDorosi.team);
+                                            // room5.tiles[tempPos]=1;
+                                            room5.tiles.set(tempPos,flagDorosi.team);
+                                            tempPos += deltaX + deltaY * board.size;
+                                        }
+                                        room5.tiles.set(tempPos,flagDorosi.team);
+                                        // room5.tiles[currentPos] = flagDorosi.team;
+
+                                    }
+                                    console.log("-> tempAnswer = " + tempAnswer);
+                                }
+
+                                flagDorosi.flagposition = currentPos;
+                                console.log("Flag on " + flagDorosi.flagposition);
+                                // console.log("room5.tiles[1] : " + room5.tiles[1]);
+                                // room5.tiles[1]=3;
+                                // console.log("room5.tiles[1] : " + room5.tiles[1]);
+                                room5.save();
+                            }
+                            else
+                                console.log("-> " + req5.dorosiid + " is not found.");
+                        }
+                        else
+                            console.log("-> " + room.boardtag + " is not found.");
+                    });
+                }
+                else
+                    console.log("-> room " + req5.roomtag + " is not found.");
+            });//////
         })
 
         socket.on("disconnect", () => {
             // clearInterval(updateBoardInterval);
+            var thisUser = user[idsFromSocket[socket.id]];
+
+            Room.findOne({"tag":thisUser.roomtag},(err, room) => {
+                var deleteDorosi = null;
+                var deleteIndex = -1;
+                _.each(room.dorosis,(dorosi, index) => {
+                    if(dorosi.dorosiid=thisUser.dorosiid) {
+                        deleteDorosi=dorosi;
+                        deleteIndex=index;
+                    }
+                });
+                if(deleteDorosi!=null) {
+                    room.dorosis.splice(deleteIndex,1);
+                    room.save();
+                }
+                else
+                    console.log("dorosi not found");
+            });
             delete user[idsFromSocket[socket.id]];
             console.log("disconnected");
         });
